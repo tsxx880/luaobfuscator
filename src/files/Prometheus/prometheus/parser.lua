@@ -587,42 +587,87 @@ function Parser:expressionAnd(scope)
 end
 
 function Parser:expressionComparision(scope)
-	local curr = self:expressionStrCat(scope);
+	local curr = self:expressionBitOr(scope);
 	repeat
 		local found = false;
 		if(consume(self, TokenKind.Symbol, "<")) then
-			local rhs = self:expressionStrCat(scope);
+			local rhs = self:expressionBitOr(scope);
 			curr = Ast.LessThanExpression(curr, rhs, true);
 			found = true;
 		end
 		
 		if(consume(self, TokenKind.Symbol, ">")) then
-			local rhs = self:expressionStrCat(scope);
+			local rhs = self:expressionBitOr(scope);
 			curr = Ast.GreaterThanExpression(curr, rhs, true);
 			found = true;
 		end
 		
 		if(consume(self, TokenKind.Symbol, "<=")) then
-			local rhs = self:expressionStrCat(scope);
+			local rhs = self:expressionBitOr(scope);
 			curr = Ast.LessThanOrEqualsExpression(curr, rhs, true);
 			found = true;
 		end
 	
 		if(consume(self, TokenKind.Symbol, ">=")) then
-			local rhs = self:expressionStrCat(scope);
+			local rhs = self:expressionBitOr(scope);
 			curr = Ast.GreaterThanOrEqualsExpression(curr, rhs, true);
 			found = true;
 		end
 		
 		if(consume(self, TokenKind.Symbol, "~=")) then
-			local rhs = self:expressionStrCat(scope);
+			local rhs = self:expressionBitOr(scope);
 			curr = Ast.NotEqualsExpression(curr, rhs, true);
 			found = true;
 		end
 	
 		if(consume(self, TokenKind.Symbol, "==")) then
-			local rhs = self:expressionStrCat(scope);
+			local rhs = self:expressionBitOr(scope);
 			curr = Ast.EqualsExpression(curr, rhs, true);
+			found = true;
+		end
+	until not found;
+
+	return curr;
+end
+
+function Parser:expressionBitOr(scope)
+	local curr = self:expressionBitXor(scope);
+
+	repeat
+		local found = false;
+		if(consume(self, TokenKind.Symbol, "|")) then
+			local rhs = self:expressionBitXor(scope);
+			curr = Ast.BitOrExpression(curr, rhs, true);
+			found = true;
+		end
+	until not found;
+
+	return curr;
+end
+
+function Parser:expressionBitXor(scope)
+	local curr = self:expressionBitAnd(scope);
+
+	repeat
+		local found = false;
+		if(consume(self, TokenKind.Symbol, "~")) then
+			local rhs = self:expressionBitAnd(scope);
+			curr = Ast.BitXorExpression(curr, rhs, true);
+			found = true;
+		end
+	until not found;
+
+	return curr;
+end
+
+function Parser:expressionBitAnd(scope)
+	local curr = self:expressionStrCat(scope);
+
+	repeat
+		local found = false;
+		if(consume(self, TokenKind.Symbol, "&")) then
+			local rhs = self:expressionStrCat(scope);
+			curr = Ast.BitAndExpression(curr, rhs, true);
 			found = true;
 		end
 	until not found;
@@ -642,23 +687,44 @@ function Parser:expressionStrCat(scope)
 end
 
 function Parser:expressionAddSub(scope)
-	local curr = self:expressionMulDivMod(scope);
+	local curr = self:expressionBitShift(scope);
 
 	repeat
 		local found = false;
 		if(consume(self, TokenKind.Symbol, "+")) then
-			local rhs = self:expressionMulDivMod(scope);
+			local rhs = self:expressionBitShift(scope);
 			curr = Ast.AddExpression(curr, rhs, true);
 			found = true;
 		end
 		
 		if(consume(self, TokenKind.Symbol, "-")) then
-			local rhs = self:expressionMulDivMod(scope);
+			local rhs = self:expressionBitShift(scope);
 			curr = Ast.SubExpression(curr, rhs, true);
 			found = true;
 		end
 	until not found;
 	
+
+	return curr;
+end
+
+function Parser:expressionBitShift(scope)
+	local curr = self:expressionMulDivMod(scope);
+
+	repeat
+		local found = false;
+		if(consume(self, TokenKind.Symbol, "<<")) then
+			local rhs = self:expressionMulDivMod(scope);
+			curr = Ast.BitLShiftExpression(curr, rhs, true);
+			found = true;
+		end
+		
+		if(consume(self, TokenKind.Symbol, ">>")) then
+			local rhs = self:expressionMulDivMod(scope);
+			curr = Ast.BitRShiftExpression(curr, rhs, true);
+			found = true;
+		end
+	until not found;
 
 	return curr;
 end
@@ -704,6 +770,11 @@ function Parser:expressionUnary(scope)
 	if(consume(self, TokenKind.Symbol, "-")) then
 		local rhs = self:expressionUnary(scope);
 		return Ast.NegateExpression(rhs, true);
+	end
+	
+	if(consume(self, TokenKind.Symbol, "~")) then
+		local rhs = self:expressionUnary(scope);
+		return Ast.BitNotExpression(rhs, true);
 	end
 
 	return self:expressionPow(scope);

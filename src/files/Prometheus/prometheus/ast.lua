@@ -47,6 +47,12 @@ local AstKind = {
 	VarargExpression = "VarargExpression";
 	OrExpression = "OrExpression";
 	AndExpression = "AndExpression";
+	BitOrExpression = "BitOrExpression";
+	BitAndExpression = "BitAndExpression";
+	BitXorExpression = "BitXorExpression";
+	BitLShiftExpression = "BitLShiftExpression";
+	BitRShiftExpression = "BitRShiftExpression";
+	BitNotExpression = "BitNotExpression";
 	LessThanExpression = "LessThanExpression";
 	GreaterThanExpression = "GreaterThanExpression";
 	LessThanOrEqualsExpression = "LessThanOrEqualsExpression";
@@ -86,6 +92,9 @@ local astKindExpressionLookup = {
 	[AstKind.VarargExpression] = 0;
 	[AstKind.OrExpression] = 12;
 	[AstKind.AndExpression] = 11;
+	[AstKind.BitOrExpression] = 10;
+	[AstKind.BitXorExpression] = 9;
+	[AstKind.BitAndExpression] = 8;
 	[AstKind.LessThanExpression] = 10;
 	[AstKind.GreaterThanExpression] = 10;
 	[AstKind.LessThanOrEqualsExpression] = 10;
@@ -98,6 +107,9 @@ local astKindExpressionLookup = {
 	[AstKind.MulExpression] = 7;
 	[AstKind.DivExpression] = 7;
 	[AstKind.ModExpression] = 7;
+	[AstKind.BitLShiftExpression] = 7;
+	[AstKind.BitRShiftExpression] = 7;
+	[AstKind.BitNotExpression] = 6;
 	[AstKind.NotExpression] = 5;
 	[AstKind.LenExpression] = 5;
 	[AstKind.NegateExpression] = 5;
@@ -461,6 +473,101 @@ function Ast.AndExpression(lhs, rhs, simplify)
 	return {
 		kind = AstKind.AndExpression,
 		lhs = lhs,
+		rhs = rhs,
+		isConstant = false,
+	}
+end
+
+function Ast.BitOrExpression(lhs, rhs, simplify)
+	if(simplify and rhs.isConstant and lhs.isConstant) then
+		local success, val = pcall(function() return lhs.value | rhs.value end);
+		if success then
+			return Ast.ConstantNode(val);
+		end
+	end
+
+	return {
+		kind = AstKind.BitOrExpression,
+		lhs = lhs,
+		rhs = rhs,
+		isConstant = false,
+	}
+end
+
+function Ast.BitAndExpression(lhs, rhs, simplify)
+	if(simplify and rhs.isConstant and lhs.isConstant) then
+		local success, val = pcall(function() return lhs.value & rhs.value end);
+		if success then
+			return Ast.ConstantNode(val);
+		end
+	end
+
+	return {
+		kind = AstKind.BitAndExpression,
+		lhs = lhs,
+		rhs = rhs,
+		isConstant = false,
+	}
+end
+
+function Ast.BitXorExpression(lhs, rhs, simplify)
+	if(simplify and rhs.isConstant and lhs.isConstant) then
+		local success, val = pcall(function() return lhs.value ~ rhs.value end);
+		if success then
+			return Ast.ConstantNode(val);
+		end
+	end
+
+	return {
+		kind = AstKind.BitXorExpression,
+		lhs = lhs,
+		rhs = rhs,
+		isConstant = false,
+	}
+end
+
+function Ast.BitLShiftExpression(lhs, rhs, simplify)
+	if(simplify and rhs.isConstant and lhs.isConstant) then
+		local success, val = pcall(function() return lhs.value << rhs.value end);
+		if success then
+			return Ast.ConstantNode(val);
+		end
+	end
+
+	return {
+		kind = AstKind.BitLShiftExpression,
+		lhs = lhs,
+		rhs = rhs,
+		isConstant = false,
+	}
+end
+
+function Ast.BitRShiftExpression(lhs, rhs, simplify)
+	if(simplify and rhs.isConstant and lhs.isConstant) then
+		local success, val = pcall(function() return lhs.value >> rhs.value end);
+		if success then
+			return Ast.ConstantNode(val);
+		end
+	end
+
+	return {
+		kind = AstKind.BitRShiftExpression,
+		lhs = lhs,
+		rhs = rhs,
+		isConstant = false,
+	}
+end
+
+function Ast.BitNotExpression(rhs, simplify)
+	if(simplify and rhs.isConstant) then
+		local success, val = pcall(function() return ~rhs.value end);
+		if success then
+			return Ast.ConstantNode(val);
+		end
+	end
+
+	return {
+		kind = AstKind.BitNotExpression,
 		rhs = rhs,
 		isConstant = false,
 	}

@@ -45,6 +45,11 @@ function Compiler:new()
             AstKind.GreaterThanOrEqualsExpression,
             AstKind.NotEqualsExpression,
             AstKind.EqualsExpression,
+            AstKind.BitOrExpression,
+            AstKind.BitAndExpression,
+            AstKind.BitXorExpression,
+            AstKind.BitLShiftExpression,
+            AstKind.BitRShiftExpression,
             AstKind.StrCatExpression,
             AstKind.AddExpression,
             AstKind.SubExpression,
@@ -2151,6 +2156,22 @@ function Compiler:compileExpression(expression, funcDepth, numReturns)
                 local rhsReg = self:compileExpression(expression.rhs, funcDepth, 1)[1];
 
                 self:addStatement(self:setRegister(scope, regs[i], Ast.NegateExpression(self:register(scope, rhsReg))), {regs[i]}, {rhsReg}, true);
+                self:freeRegister(rhsReg, false)
+            else
+               self:addStatement(self:setRegister(scope, regs[i], Ast.NilExpression()), {regs[i]}, {}, false);
+            end
+        end
+        return regs;
+    end
+
+    if(expression.kind == AstKind.BitNotExpression) then
+        local regs = {};
+        for i=1, numReturns do
+            regs[i] = self:allocRegister();
+            if(i == 1) then
+                local rhsReg = self:compileExpression(expression.rhs, funcDepth, 1)[1];
+
+                self:addStatement(self:setRegister(scope, regs[i], Ast.BitNotExpression(self:register(scope, rhsReg))), {regs[i]}, {rhsReg}, true);
                 self:freeRegister(rhsReg, false)
             else
                self:addStatement(self:setRegister(scope, regs[i], Ast.NilExpression()), {regs[i]}, {}, false);
